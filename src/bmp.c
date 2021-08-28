@@ -76,7 +76,7 @@ char
  */
 
 char
-*create_bmp(size_t *nmb, const bool *arr, const int width, const int height)
+*create_bmp_1bit(size_t *nmb, const bool *arr, const int width, const int height)
 {
     /*
     char *content = calloc(sizeof(char), 20);
@@ -102,13 +102,13 @@ char
 // Should set the bit, the first & will reset it
 
 size_t
-write_bmp(char *restrict filename, const bool *arr, const int width, const int height)
+write_bmp_1bit(char *restrict filename, const bool *arr, const int width, const int height)
 {
     // Code
     FILE *file = fopen(filename, "wb+");
     size_t nmb = 0;
 
-    char *bmp_content = create_bmp(&nmb, arr, width, height);
+    char *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
     size_t fwrite_result = fwrite(bmp_content, sizeof(char), nmb, file);
 

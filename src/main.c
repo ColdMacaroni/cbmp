@@ -28,9 +28,9 @@ int
 main(/*int argc, char **argv*/)
 {
 #ifdef T_WIDTH
-    //print_arr(g_arr, T_WIDTH, T_HEIGHT);
-    printf("int: %lu\tchar: %lu\n", sizeof(int), sizeof(char));
-    write_bmp("test", g_arr, T_WIDTH, T_HEIGHT);
+    print_arr(g_arr, T_WIDTH, T_HEIGHT);
+
+    printf("\n%lu bytes written\n", write_bmp_1bit("test", g_arr, T_WIDTH, T_HEIGHT));
 #endif
 
     return 0;
