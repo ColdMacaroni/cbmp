@@ -1,7 +1,10 @@
 /* Convert an array to a 1bit bmp */
 #include <stdio.h>
 #include <stdbool.h>
+#include "bmp.h"
 
+// Test array
+#if 1
 #define T_WIDTH 10
 #define T_HEIGHT 10
 const bool g_arr[T_WIDTH * T_HEIGHT] = {
@@ -16,6 +19,7 @@ const bool g_arr[T_WIDTH * T_HEIGHT] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
 };
+#endif
 
 void
 print_arr(const bool *arr, const int width, const int height);
@@ -23,7 +27,9 @@ print_arr(const bool *arr, const int width, const int height);
 int
 main(/*int argc, char **argv*/)
 {
+#ifdef T_WIDTH
     print_arr(g_arr, T_WIDTH, T_HEIGHT);
+#endif
 }
 
 void
