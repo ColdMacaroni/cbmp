@@ -3,6 +3,33 @@
 #include <stdlib.h>
 #include <string.h>
 
+int flip_int(int int_in)
+{
+    /* 0x11223344 -> 0x22114433 */
+    // I tried to do some bitshifting with masks but it ended up setting the
+    // first byte to 0xff if the second was 0x00. This is easier /shrug
+
+    char in[4];
+    char out[4];
+
+    int int_out;
+
+    *(int *)&in[0] = int_in;
+
+    out[0] = in[1];
+    out[1] = in[0];
+    out[2] = in[3];
+    out[3] = in[2];
+
+    int_out = *(int *)&out[0];
+
+    /*
+    printf("in:\t0x08%x", int_in);
+    printf("out:\t0x08%x", int_out);
+    //*/
+    return int_out;
+}
+
 char
 *create_bmp_header(size_t *nmb, unsigned int nmb_dib, unsigned int nmb_data)
 {
@@ -17,10 +44,14 @@ char
     header[1] = 'M';
 
     // Size. 4 bytes. 2-5
-    unsigned int bytes = nmb_dib + nmb_data + nmb_header;
-    *(int *)&header[2] = (int)bytes;
+    unsigned int bytes = nmb_header + nmb_dib + nmb_data;
+    *(int *)&header[2] = flip_int((unsigned int)bytes);
 
     // Reserved. 4 bytes. 6-9
+    *(int *)&header[4] = (int)0;
+
+    unsigned int offset = nmb_header + nmb_dib;
+    *(int *)&header[10] = flip_int((unsigned int)offset);
 
     *nmb += nmb_header;
 
