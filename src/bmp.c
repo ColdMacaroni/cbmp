@@ -50,6 +50,7 @@ char
     // Reserved. 4 bytes. 6-9
     *(int *)&header[4] = (int)0;
 
+    // Pixel Array Offset. 4 bytes. 10-14
     unsigned int offset = nmb_header + nmb_dib;
     *(int *)&header[10] = flip_int((unsigned int)offset);
 
