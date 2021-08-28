@@ -4,7 +4,7 @@
 #include <string.h>
 
 char
-*create_bmp(bool *arr, const int width, const int height)
+*create_bmp(const bool *arr, const int width, const int height)
 {
     char *content = calloc(sizeof(char), 20);
 
@@ -19,7 +19,7 @@ char
 // Should set the bit, the first & will reset it
 
 size_t
-write_bmp(char *restrict filename, bool *arr, const int width, const int height)
+write_bmp(char *restrict filename, const bool *arr, const int width, const int height)
 {
     // Code
     FILE *file = fopen(filename, "wb+");

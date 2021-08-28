@@ -29,6 +29,7 @@ main(/*int argc, char **argv*/)
 {
 #ifdef T_WIDTH
     print_arr(g_arr, T_WIDTH, T_HEIGHT);
+    write_bmp("test", g_arr, T_WIDTH, T_HEIGHT);
 #endif
 }
 

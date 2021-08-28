@@ -2,7 +2,7 @@
 #define BMP_PROTECT 1
 #include <stdbool.h>
 
-bool
-write_bmp(bool *arr, const int width, const int height);
+size_t
+write_bmp(char *restrict filename, const bool *arr, const int width, const int height);
 
 #endif
