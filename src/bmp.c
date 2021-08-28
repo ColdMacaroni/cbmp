@@ -3,6 +3,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* To spread an int into over multiple bytes
+ *
+ * Int. 4 bytes. Will reset leftover bits.
+ *    *(int *)&content[0] = (int)0x4e494345;
+ *    4e494345 -> 4e 49 43 45 -> 'N' 'I' 'C' 'E'
+ *    content[0] == 'E'
+ *    content[1] == 'C'
+ *    content[2] == 'I'
+ *    content[3] == 'N'
+ *
+ * Short int. 2 bytes. Will reset leftover bits.
+ *    *(short int *)&content[0] = (short int)0x4849;
+ *    4849 -> 48 49 -> 'H' 'I'
+ *    content[0] == 'I'
+ *    content[1] == 'H'
+ */
+
+
 int flip_int(int int_in)
 {
     /* 0x11223344 -> 0x22114433 */
@@ -33,10 +51,9 @@ int flip_int(int int_in)
 char
 *create_bmp_header(size_t *nmb, unsigned int nmb_dib, unsigned int nmb_data)
 {
-    // Bitmap header has a fixed size of 14 bytes, one more for null
+    // Bitmap header has a fixed size of 14 bytes
     enum { nmb_header = 14 };
-    char *header = calloc(sizeof(char), nmb_header + 1);
-    memset(header, '\0', nmb_header + 1);
+    char *header = calloc(sizeof(char), nmb_header);
 
     /* https://en.wikipedia.org/wiki/BMP_file_format#Bitmap_file_header */
     // ID. 2 bytes. 0-1
@@ -54,47 +71,54 @@ char
     unsigned int offset = nmb_header + nmb_dib;
     *(int *)&header[10] = flip_int((unsigned int)offset);
 
-    *nmb += nmb_header;
+    if (nmb != NULL)
+        *nmb += nmb_header;
 
     return header;
 }
 
-/* To spread an int into over multiple bytes
- *
- * Int. 4 bytes. Will reset leftover bits.
- *    *(int *)&content[0] = (int)0x4e494345;
- *    4e494345 -> 4e 49 43 45 -> 'N' 'I' 'C' 'E'
- *    content[0] == 'E'
- *    content[1] == 'C'
- *    content[2] == 'I'
- *    content[3] == 'N'
- *
- * Short int. 2 bytes. Will reset leftover bits.
- *    *(short int *)&content[0] = (short int)0x4849;
- *    4849 -> 48 49 -> 'H' 'I'
- *    content[0] == 'I'
- *    content[1] == 'H'
- */
+char
+*create_min_dib()
+{
+    /* https://en.wikipedia.org/wiki/BMP_file_format#DIB_header_(bitmap_information_header) */
+    // The smallest dib is 40 bytes. BITMAPINFOHEADER
+    enum { nmb_dib = 40 };
+    char *dib = calloc(sizeof(char), nmb_dib);
+
+    return dib;
+}
 
 char
-*create_bmp_1bit(size_t *nmb, const bool *arr, const int width, const int height)
+*create_bmp_1bit(size_t *nmb_arg, const bool *arr, const int width, const int height)
 {
-    /*
-    char *content = calloc(sizeof(char), 20);
-    memset(content, 0, 20);
+    size_t header_nmb = 0;
+    size_t dib_nmb = 0;
+    size_t data_nmb = 0;
 
+    size_t fallback_nmb = 0;
+    size_t *nmb;
 
-    *(int *)&content[0] = (int)0x4e494345;
+    // Accept NULL for argument.
+    if (nmb_arg == NULL)
+        nmb = &fallback_nmb;
+    else
+        nmb = nmb_arg;
 
-    printf("%c\n", content[0]);
-    printf("%c\n", content[1]);
-    printf("%c\n", content[2]);
-    printf("%c\n", content[3]);
-    //*/
+    // Create data
 
-    char *header = create_bmp_header(nmb, 40, 16);
+    // Create DIB
 
-    return header;
+    // Create header last because it needs dib and data nmb
+    char *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
+
+    *nmb += header_nmb + dib_nmb + data_nmb;
+    char *bmp = calloc(sizeof(char), *nmb);
+
+    // Cat header
+    bmp = strncat(bmp, header, header_nmb);
+    free(header);
+
+    return bmp;
 }
 
 // Assuming char is 4 bits,
