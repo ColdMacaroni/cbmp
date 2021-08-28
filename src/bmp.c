@@ -4,7 +4,7 @@
 #include <string.h>
 
 /* To spread an int into over multiple bytes
- *
+ * TODO: Turn this into a macro maybe?
  * Int. 4 bytes. Will reset leftover bits.
  *    *(int *)&content[0] = (int)0x4e494345;
  *    4e494345 -> 4e 49 43 45 -> 'N' 'I' 'C' 'E'
@@ -55,6 +55,9 @@ char
     enum { nmb_header = 14 };
     char *header = calloc(sizeof(char), nmb_header);
 
+    if (header == NULL)
+        return header;
+
     /* https://en.wikipedia.org/wiki/BMP_file_format#Bitmap_file_header */
     // ID. 2 bytes. 0-1
     header[0] = 'B';
@@ -78,18 +81,30 @@ char
 }
 
 char
-*create_min_dib()
+*create_min_dib(size_t *nmb, signed int height, signed int width)
 {
     /* https://en.wikipedia.org/wiki/BMP_file_format#DIB_header_(bitmap_information_header) */
     // The smallest dib is 40 bytes. BITMAPINFOHEADER
     enum { nmb_dib = 40 };
     char *dib = calloc(sizeof(char), nmb_dib);
 
+    if (dib == NULL)
+        return NULL;
+
+    // Size of header. 4 bytes. 0-3
+    *(int *)&dib[0] = flip_int((int)nmb_dib);
+
+    // Width, 4 bytes. 4-7
+    // Height, 4 bytes, 8-11
+
+    if (nmb != NULL)
+        *nmb = nmb_dib;
+
     return dib;
 }
 
 char
-*create_bmp_1bit(size_t *nmb_arg, const bool *arr, const int width, const int height)
+*create_bmp_1bit(size_t *nmb_arg, const bool *arr, signed int width, signed int height)
 {
     size_t header_nmb = 0;
     size_t dib_nmb = 0;
