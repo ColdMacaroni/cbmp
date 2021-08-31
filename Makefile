@@ -33,4 +33,4 @@ $(OBJ_DIR):
 	mkdir $@
 
 clean:
-	rm -rf $(BIN_FILE) $(OBJ_DIR)
+	rm -rf $(BIN_DIR) $(OBJ_DIR)

@@ -48,6 +48,31 @@ int flip_int(int int_in)
     return int_out;
 }
 
+int flip_short_int(short int int_in)
+{
+    /* 0x11223344 -> 0x22114433 */
+    // I tried to do some bitshifting with masks but it ended up setting the
+    // first byte to 0xff if the second was 0x00. This is easier /shrug
+
+    char in[2];
+    char out[2];
+
+    short int int_out;
+
+    *(short int *)&in[0] = int_in;
+
+    out[0] = in[1];
+    out[1] = in[0];
+
+    int_out = *(short int *)&out[0];
+
+    /*
+    printf("in:\t0x08%x", int_in);
+    printf("out:\t0x08%x", int_out);
+    //*/
+    return int_out;
+}
+
 char
 *create_bmp_header(size_t *nmb, unsigned int nmb_dib, unsigned int nmb_data)
 {
@@ -64,8 +89,8 @@ char
     header[1] = 'M';
 
     // Size. 4 bytes. 2-5
-    unsigned int bytes = nmb_header + nmb_dib + nmb_data;
-    *(int *)&header[2] = flip_int((unsigned int)bytes);
+    unsigned int size = nmb_header + nmb_dib + nmb_data;
+    *(int *)&header[2] = flip_int((unsigned int)size);
 
     // Reserved. 4 bytes. 6-9
     *(int *)&header[4] = (int)0;
@@ -81,8 +106,9 @@ char
 }
 
 char
-*create_min_dib(size_t *nmb, signed int height, signed int width)
+*create_dib_1bit(size_t *nmb, signed int height, signed int width)
 {
+    /* Creates smallest possible dib */
     /* https://en.wikipedia.org/wiki/BMP_file_format#DIB_header_(bitmap_information_header) */
     // The smallest dib is 40 bytes. BITMAPINFOHEADER
     enum { nmb_dib = 40 };
@@ -95,10 +121,13 @@ char
     *(int *)&dib[0] = flip_int((int)nmb_dib);
 
     // Width, 4 bytes. 4-7
+    *(int *)&dib[4] = flip_int((int)width);
+
     // Height, 4 bytes, 8-11
+    *(int *)&dib[8] = flip_int((int)height);
 
     if (nmb != NULL)
-        *nmb = nmb_dib;
+        *nmb += nmb_dib;
 
     return dib;
 }
@@ -122,6 +151,7 @@ char
     // Create data
 
     // Create DIB
+    char *dib = create_dib_1bit(&dib_nmb, width, height);
 
     // Create header last because it needs dib and data nmb
     char *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
@@ -129,9 +159,17 @@ char
     *nmb += header_nmb + dib_nmb + data_nmb;
     char *bmp = calloc(sizeof(char), *nmb);
 
-    // Cat header
-    bmp = strncat(bmp, header, header_nmb);
+    // Cat header. Cant use strncat because \0 have to be preserved
+    for (int i = 0; i < header_nmb; i++)
+        bmp[i] = header[i];
+
     free(header);
+
+    // Cat dib
+    for (int i = 0; i < dib_nmb; i++)
+        bmp[header_nmb + i] = dib[i];
+
+    free(dib);
 
     return bmp;
 }
