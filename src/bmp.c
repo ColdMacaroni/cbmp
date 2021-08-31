@@ -122,21 +122,22 @@ int8_t
     *(int32_t *)&dib[0] = flip_int((int32_t)nmb_dib);
 
     // Width, 4 bytes. 4-7
-    *(int32_t *)&dib[4] = flip_int((int)width);
+    *(int32_t *)&dib[4] = flip_int((int32_t)width);
 
     // Height, 4 bytes, 8-11
-    *(int32_t *)&dib[8] = flip_int((int)height);
+    *(int32_t *)&dib[8] = flip_int((int32_t)height);
 
     // Color plane. 2 bytes. 12-13
-    *(int32_t *)&dib[12] = flip_short_int((short int)1);
+    *(int32_t *)&dib[12] = flip_short_int((int16_t)1);
 
     // Bits per pixel. 2 bytes. 14-15
-    *(int32_t *)&dib[14] = flip_short_int((short int)1);
+    *(int32_t *)&dib[14] = flip_short_int((int16_t)1);
 
     // Compression. 4 bytes. 16-19
-    *(int32_t *)&dib[16] = flip_int((int)0);
+    *(int32_t *)&dib[16] = flip_int((int32_t)0);
 
-    // Size of
+    // Size of data. 4 bytes. 20-23
+    *(int32_t *)&dib[16] = flip_int((int32_t)data_nmb);
 
     if (nmb != NULL)
         *nmb += nmb_dib;
