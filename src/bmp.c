@@ -22,25 +22,25 @@
  */
 
 
-int flip_int(int int_in)
+int32_t flip_int(int32_t int_in)
 {
     /* 0x11223344 -> 0x22114433 */
     // I tried to do some bitshifting with masks but it ended up setting the
     // first byte to 0xff if the second was 0x00. This is easier /shrug
 
-    char in[4];
-    char out[4];
+    int8_t in[4];
+    int8_t out[4];
 
-    int int_out;
+    int32_t int_out;
 
-    *(int *)&in[0] = int_in;
+    *(int32_t *)&in[0] = int_in;
 
     out[0] = in[1];
     out[1] = in[0];
     out[2] = in[3];
     out[3] = in[2];
 
-    int_out = *(int *)&out[0];
+    int_out = *(int32_t *)&out[0];
 
     /*
     printf("in:\t0x08%x", int_in);
@@ -49,23 +49,23 @@ int flip_int(int int_in)
     return int_out;
 }
 
-int flip_short_int(short int int_in)
+int16_t flip_short_int(int16_t int_in)
 {
     /* 0x11223344 -> 0x22114433 */
     // I tried to do some bitshifting with masks but it ended up setting the
     // first byte to 0xff if the second was 0x00. This is easier /shrug
 
-    char in[2];
-    char out[2];
+    int8_t in[2];
+    int8_t out[2];
 
-    short int int_out;
+    int16_t int_out;
 
     *(short int *)&in[0] = int_in;
 
     out[0] = in[1];
     out[1] = in[0];
 
-    int_out = *(short int *)&out[0];
+    int_out = *(int16_t *)&out[0];
 
     /*
     printf("in:\t0x08%x", int_in);
@@ -74,12 +74,12 @@ int flip_short_int(short int int_in)
     return int_out;
 }
 
-char
+int8_t
 *create_bmp_header(size_t *nmb, unsigned int nmb_dib, unsigned int nmb_data)
 {
     // Bitmap header has a fixed size of 14 bytes
     enum { nmb_header = 14 };
-    char *header = calloc(sizeof(char), nmb_header);
+    int8_t *header = calloc(sizeof(int8_t), nmb_header);
 
     if (header == NULL)
         return header;
@@ -90,15 +90,15 @@ char
     header[1] = 'M';
 
     // Size. 4 bytes. 2-5
-    unsigned int size = nmb_header + nmb_dib + nmb_data;
-    *(int *)&header[2] = flip_int((unsigned int)size);
+    uint32_t size = nmb_header + nmb_dib + nmb_data;
+    *(uint32_t *)&header[2] = flip_int((uint32_t)size);
 
     // Reserved. 4 bytes. 6-9
-    *(int *)&header[4] = (int)0;
+    *(uint32_t *)&header[4] = (uint32_t)0;
 
     // Pixel Array Offset. 4 bytes. 10-14
     unsigned int offset = nmb_header + nmb_dib;
-    *(int *)&header[10] = flip_int((unsigned int)offset);
+    *(uint32_t *)&header[10] = flip_int((uint32_t)offset);
 
     if (nmb != NULL)
         *nmb += nmb_header;
@@ -106,35 +106,35 @@ char
     return header;
 }
 
-char
+int8_t
 *create_dib_1bit(size_t *nmb, size_t data_nmb, signed int height, signed int width)
 {
     /* Creates smallest possible dib */
     /* https://en.wikipedia.org/wiki/BMP_file_format#DIB_header_(bitmap_information_header) */
     // The smallest dib is 40 bytes. BITMAPINFOHEADER
     enum { nmb_dib = 40 };
-    char *dib = calloc(sizeof(char), nmb_dib);
+    int8_t *dib = calloc(sizeof(int8_t), nmb_dib);
 
     if (dib == NULL)
         return NULL;
 
     // Size of header. 4 bytes. 0-3
-    *(int *)&dib[0] = flip_int((int)nmb_dib);
+    *(int32_t *)&dib[0] = flip_int((int32_t)nmb_dib);
 
     // Width, 4 bytes. 4-7
-    *(int *)&dib[4] = flip_int((int)width);
+    *(int32_t *)&dib[4] = flip_int((int)width);
 
     // Height, 4 bytes, 8-11
-    *(int *)&dib[8] = flip_int((int)height);
+    *(int32_t *)&dib[8] = flip_int((int)height);
 
     // Color plane. 2 bytes. 12-13
-    *(short int *)&dib[12] = flip_short_int((short int)1);
+    *(int32_t *)&dib[12] = flip_short_int((short int)1);
 
     // Bits per pixel. 2 bytes. 14-15
-    *(short int *)&dib[14] = flip_short_int((short int)1);
+    *(int32_t *)&dib[14] = flip_short_int((short int)1);
 
     // Compression. 4 bytes. 16-19
-    *(int *)&dib[16] = flip_int((int)0);
+    *(int32_t *)&dib[16] = flip_int((int)0);
 
     // Size of
 
@@ -144,7 +144,7 @@ char
     return dib;
 }
 
-char
+int8_t
 *create_bmp_1bit(size_t *nmb_arg, const bool *arr, signed int width, signed int height)
 {
     size_t header_nmb = 0;
@@ -163,22 +163,22 @@ char
     // Create data
 
     // Create DIB
-    char *dib = create_dib_1bit(&dib_nmb, data_nmb, width, height);
+    int8_t *dib = create_dib_1bit(&dib_nmb, data_nmb, width, height);
 
     // Create header last because it needs dib and data nmb
-    char *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
+    int8_t *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
 
     *nmb += header_nmb + dib_nmb + data_nmb;
-    char *bmp = calloc(sizeof(char), *nmb);
+    int8_t *bmp = calloc(sizeof(int8_t), *nmb);
 
     // Cat header. Cant use strncat because \0 have to be preserved
-    for (int i = 0; i < header_nmb; i++)
+    for (size_t i = 0; i < header_nmb; i++)
         bmp[i] = header[i];
 
     free(header);
 
     // Cat dib
-    for (int i = 0; i < dib_nmb; i++)
+    for (size_t i = 0; i < dib_nmb; i++)
         bmp[header_nmb + i] = dib[i];
 
     free(dib);
@@ -198,9 +198,9 @@ write_bmp_1bit(char *restrict filename, const bool *arr, const int width, const 
     FILE *file = fopen(filename, "wb+");
     size_t nmb = 0;
 
-    char *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
+    int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    size_t fwrite_result = fwrite(bmp_content, sizeof(char), nmb, file);
+    size_t fwrite_result = fwrite(bmp_content, sizeof(int8_t), nmb, file);
 
     free(bmp_content);
     fclose(file);
