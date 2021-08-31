@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 /* To spread an int into over multiple bytes
@@ -106,7 +107,7 @@ char
 }
 
 char
-*create_dib_1bit(size_t *nmb, signed int height, signed int width)
+*create_dib_1bit(size_t *nmb, size_t data_nmb, signed int height, signed int width)
 {
     /* Creates smallest possible dib */
     /* https://en.wikipedia.org/wiki/BMP_file_format#DIB_header_(bitmap_information_header) */
@@ -125,6 +126,17 @@ char
 
     // Height, 4 bytes, 8-11
     *(int *)&dib[8] = flip_int((int)height);
+
+    // Color plane. 2 bytes. 12-13
+    *(short int *)&dib[12] = flip_short_int((short int)1);
+
+    // Bits per pixel. 2 bytes. 14-15
+    *(short int *)&dib[14] = flip_short_int((short int)1);
+
+    // Compression. 4 bytes. 16-19
+    *(int *)&dib[16] = flip_int((int)0);
+
+    // Size of
 
     if (nmb != NULL)
         *nmb += nmb_dib;
@@ -151,7 +163,7 @@ char
     // Create data
 
     // Create DIB
-    char *dib = create_dib_1bit(&dib_nmb, width, height);
+    char *dib = create_dib_1bit(&dib_nmb, data_nmb, width, height);
 
     // Create header last because it needs dib and data nmb
     char *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
