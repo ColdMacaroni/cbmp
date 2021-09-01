@@ -225,16 +225,21 @@ int8_t
     else
         nmb = nmb_arg;
 
-
+/*
     // Create data
     uint8_t *data = create_bmp_data_1bit(&data_nmb, arr, width, height);
 
     // Create DIB
     int8_t *dib = create_dib_1bit(&dib_nmb, data_nmb, width, height);
+*/
 
-
+    dib_nmb = 40;
+    data_nmb = 16;
     // Create header last because it needs dib and data nmb
     int8_t *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
+
+    dib_nmb = 0;
+    data_nmb = 0;
 
     *nmb += header_nmb + dib_nmb + data_nmb;
     int8_t *bmp = calloc(sizeof(int8_t), *nmb);
@@ -245,6 +250,7 @@ int8_t
 
     free(header);
 
+    /*
     // Cat dib
     for (size_t i = 0; i < dib_nmb; i++)
         bmp[header_nmb + i] = dib[i];
@@ -256,6 +262,7 @@ int8_t
         bmp[header_nmb + dib_nmb + i] = data[i];
 
     free(data);
+    */
     return bmp;
 }
 
