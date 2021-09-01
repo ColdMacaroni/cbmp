@@ -35,6 +35,7 @@ main(/*int argc, char **argv*/)
     bool wiki_arr[] = {1, 0, 1, 0};
     int width = 2, height = 2;
     printf("\n%lu bytes written\n", write_bmp_1bit("test", wiki_arr, width, height));
+
     return 0;
 }
 

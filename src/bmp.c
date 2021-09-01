@@ -22,6 +22,21 @@
  */
 
 
+uint8_t bool_arr_to_int8(bool *restrict arr)
+{
+    uint8_t out = 0;
+
+    // arr left to right are bits left to right.
+    for (int i = 0; i < 8; i++)
+    {
+        out <<= 1;
+        out |= arr[i];
+    }
+
+    return out;
+}
+
+
 int32_t flip_int(int32_t int_in)
 {
     /* 0x11223344 -> 0x22114433 */
