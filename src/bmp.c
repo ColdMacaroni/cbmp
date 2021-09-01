@@ -106,14 +106,14 @@ int8_t
 
     // Size. 4 bytes. 2-5
     uint32_t size = nmb_header + nmb_dib + nmb_data;
-    *(uint32_t *)&header[2] = flip_int((uint32_t)size);
+    *(uint32_t *)&header[2] = /*flip_int*/((uint32_t)size);
 
     // Reserved. 4 bytes. 6-9
     *(uint32_t *)&header[4] = (uint32_t)0;
 
     // Pixel Array Offset. 4 bytes. 10-14
     unsigned int offset = nmb_header + nmb_dib;
-    *(uint32_t *)&header[10] = flip_int((uint32_t)offset);
+    *(uint32_t *)&header[10] = /*flip_int*/((uint32_t)offset);
 
     if (nmb != NULL)
         *nmb += nmb_header;
@@ -134,40 +134,40 @@ int8_t
         return NULL;
 
     // Size of header. 4 bytes. 0-3
-    *(int32_t *)&dib[0] = flip_int((int32_t)nmb_dib);
+    *(int32_t *)&dib[0] = /*flip_int*/((int32_t)nmb_dib);
 
     // Width, 4 bytes. 4-7
-    *(int32_t *)&dib[4] = flip_int((int32_t)width);
+    *(int32_t *)&dib[4] = /*flip_int*/((int32_t)width);
 
     // Height, 4 bytes, 8-11
-    *(int32_t *)&dib[8] = flip_int((int32_t)height);
+    *(int32_t *)&dib[8] = /*flip_int*/((int32_t)height);
 
     // Color plane. 2 bytes. 12-13
-    *(int32_t *)&dib[12] = flip_short_int((int16_t)1);
+    *(int32_t *)&dib[12] = /*flip_short_int*/((int16_t)1);
 
     // Bits per pixel. 2 bytes. 14-15
-    *(int32_t *)&dib[14] = flip_short_int((int16_t)1);
+    *(int32_t *)&dib[14] = /*flip_short_int*/((int16_t)1);
 
     // Compression. 4 bytes. 16-19
-    *(int32_t *)&dib[16] = flip_int((int32_t)0);
+    *(int32_t *)&dib[16] = /*flip_int*/((int32_t)0);
 
     // Size of data. 4 bytes. 20-23
-    *(int32_t *)&dib[20] = flip_int((int32_t)data_nmb);
+    *(int32_t *)&dib[20] = /*flip_int*/((int32_t)data_nmb);
 
     // Resolution
     const uint32_t resol = 2835;
 
     // Vertical Resol. 4 bytes. 24-27
-    *(uint32_t *)&dib[24] = flip_int((uint32_t)resol);
+    *(uint32_t *)&dib[24] = /*flip_int*/((uint32_t)resol);
 
     // Horizontal Resol. 4 bytes. 28-31
-    *(uint32_t *)&dib[28] = flip_int((uint32_t)resol);
+    *(uint32_t *)&dib[28] = /*flip_int*/((uint32_t)resol);
 
     // Colors in palette. 4 bytes. 32-35
-    *(uint32_t *)&dib[32] = flip_int((uint32_t)0);
+    *(uint32_t *)&dib[32] = /*flip_int*/((uint32_t)0);
 
     // Important colors. 4 bytes. 36-39
-    *(uint32_t *)&dib[36] = flip_int((uint32_t)0);
+    *(uint32_t *)&dib[36] = /*flip_int*/((uint32_t)0);
 
     if (nmb != NULL)
         *nmb += nmb_dib;
@@ -182,8 +182,8 @@ uint8_t
     uint8_t *data = calloc(sizeof(uint8_t), (((width + 31) / 32) * 4) * height);
     int byte;
     const int byte_bits = 8;
-    const int bytes_per_row = (width+byte_bits-1)/byte_bits;
-
+    const int bytes_per_row = (width+31)/32;
+    printf("bpr %d\nh %d\n", bytes_per_row, height);
     // Build from bottom up
     for (int row = height - 1; row >= 0; row--)
     {
@@ -202,6 +202,7 @@ uint8_t
 
     if (nmb != NULL)
         *nmb += bytes_per_row * height;
+    //*nmb=2;
 
     printf("%lu\n", *nmb);
 
