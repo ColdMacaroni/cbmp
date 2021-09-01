@@ -139,6 +139,21 @@ int8_t
     // Size of data. 4 bytes. 20-23
     *(int32_t *)&dib[16] = flip_int((int32_t)data_nmb);
 
+    // Resolution
+    const uint32_t resol = 2835;
+
+    // Vertical Resol. 4 bytes. 24-27
+    *(uint32_t *)&dib[24] = flip_int((uint32_t)resol);
+
+    // Horizontal Resol. 4 bytes. 28-31
+    *(uint32_t *)&dib[28] = flip_int((uint32_t)resol);
+
+    // Colors in palette. 4 bytes. 32-35
+    *(uint32_t *)&dib[32] = flip_int((uint32_t)0);
+
+    // Important colors. 4 bytes. 36-39
+    *(uint32_t *)&dib[36] = flip_int((uint32_t)0);
+
     if (nmb != NULL)
         *nmb += nmb_dib;
 
