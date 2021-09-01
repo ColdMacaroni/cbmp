@@ -22,7 +22,7 @@
  */
 
 
-uint8_t bool_arr_to_int8(bool *restrict arr)
+uint8_t bool_arr_to_int8(const bool *restrict arr)
 {
     uint8_t out = 0;
 
@@ -175,6 +175,40 @@ int8_t
     return dib;
 }
 
+uint8_t
+*create_bmp_data_1bit(size_t *nmb, const bool *arr, int width, int height)
+{
+    // https://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
+    uint8_t *data = calloc(sizeof(uint8_t), (((width + 31) / 32) * 4) * height);
+    int byte;
+    const int byte_bits = 8;
+    const int bytes_per_row = (width+byte_bits-1)/byte_bits;
+
+    // Build from bottom up
+    for (int row = height - 1; row >= 0; row--)
+    {
+        for (byte = 0; byte < bytes_per_row; byte++)
+        {
+            data[height*bytes_per_row + byte] = bool_arr_to_int8(&(arr[height * row + byte * byte_bits]));
+        }
+
+        /*
+        if (column >= width - (width % 4))
+        {
+            // Add padding
+        }
+        */
+    }
+
+    if (nmb != NULL)
+        *nmb += bytes_per_row * height;
+
+    printf("%lu\n", *nmb);
+
+    // definitely nothing can go wrong.
+    return data;
+}
+
 int8_t
 *create_bmp_1bit(size_t *nmb_arg, const bool *arr, signed int width, signed int height)
 {
@@ -191,10 +225,13 @@ int8_t
     else
         nmb = nmb_arg;
 
+
     // Create data
+    uint8_t *data = create_bmp_data_1bit(&data_nmb, arr, width, height);
 
     // Create DIB
     int8_t *dib = create_dib_1bit(&dib_nmb, data_nmb, width, height);
+
 
     // Create header last because it needs dib and data nmb
     int8_t *header = create_bmp_header(&header_nmb, dib_nmb, data_nmb);
@@ -214,6 +251,11 @@ int8_t
 
     free(dib);
 
+    // Cat data
+    for (size_t i = 0; i < data_nmb; i++)
+        bmp[header_nmb + dib_nmb + i] = data[i];
+
+    free(data);
     return bmp;
 }
 
