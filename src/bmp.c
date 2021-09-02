@@ -154,6 +154,7 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
 
     int x, y;
     int offset = 0;
+    int overflow = 0;
     rgb_t c_rgb;  // Current
 
     // Maybe uint32_t[2] and have an uint64_t????
@@ -172,20 +173,76 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
      */
 
     // Go the other way because that just how bitmaps are
+    // RGB stored as BGR (yikes)
     for (y = height - 1; y >= 0; y--)
     {
         for (x = 0; x < width; x++)
         {
+            overflow = 0;
+
             // Set the current for quick access
             c_rgb = arr[y*width + x];
             switch(offset)
             {
+                // Case cascading will take care of writing as many as can be fit
+                case 0:
+                case 1:
+                    dword.byte[offset + 2] = c_rgb.r;
+                case 2:
+                    dword.byte[offset + 1] = c_rgb.g;
+                case 3:
+                    dword.byte[offset] = c_rgb.b;
+                    break;
+
+                // This should NEVER happen.
                 default:
                     assert(0);
             }
 
+            // It'll always be one less than offset unless thats 0
+            overflow = (offset) ? offset - 1 : offset;
+
+            // Update with the spaces just occupied
+            offset += 3;
+            offset %= 4;
+
+            // Write the overflown stuff to the next dword
+            switch (overflow)
+            {
+                // These are the only possible cases, any other means that
+                // something else has gone wrong somewhere else.
+                case 2:
+                    next_dword.byte[overflow - 2] = c_rgb.g;
+                case 1:
+                    next_dword.byte[overflow - 1] = c_rgb.r;
+            }
+
+            // When the current dword is full
+            // Offset of 0 means it was *just* filled, overflow clearly means
+            // its full.
+            if (offset == 0 || overflow)
+            {
+                // Store the now full dword
+                data.data[data_idx++] = dword.full;
+
+                // Update current dword to the next one
+                dword.full = next_dword.full;
+                offset = overflow;
+
+                next_dword.full = 0;
+                overflow = 0;
+            }
         }
 
+        // Add any leftovers that did not manage to fill a whole dword
+        if (offset)
+            data.data[data_idx++] = dword.full;
+
+        // Reset everything
+        dword.full = 0;
+        next_dword.full = 0;
+        offset = 0;
+        overflow = 0;
     }
 
     return data;
@@ -201,20 +258,13 @@ write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t 
     size_t result = 0;
     // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    //rgb_t *rgb_arr = bool_to_rgb_arr(arr, width *height);
+    rgb_t *rgb_arr = bool_to_rgb_arr(arr, width *height);
 
     /* Testing
      * Should look like
      * c3 c2 c1 d3  d2 d1 00 00
      * a3 a2 a1 b3  b2 b1 00 00
      */
-
-    rgb_t rgb_arr[] = {
-        (rgb_t) { 0xa1, 0xa2, 0xa3 },
-        (rgb_t) { 0xb1, 0xb2, 0xb3 },
-        (rgb_t) { 0xc1, 0xc2, 0xc3 },
-        (rgb_t) { 0xd1, 0xd2, 0xd3 },
-    };
 
     data_t data = create_bmp_data(rgb_arr, width, height);
     dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 24);
