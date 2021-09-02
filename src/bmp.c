@@ -38,7 +38,7 @@ typedef struct
 } data_t;
 
 uint32_t
-bool_arr_to_uint32(const bool *restrict arr, unsigned int arr_len)
+bool_arr_to_uint32(const bool *arr, unsigned int arr_len)
 {
     uint32_t out = 0;
 
@@ -117,17 +117,27 @@ create_bmp_dib(size_t *nmb, size_t nmb_data,
 }
 
 data_t
-create_bmp_data_1bit(const bool* arr, int32_t width, int32_t height)
+create_bmp_data_1bit(const bool *arr, int32_t width, int32_t height)
 {
     data_t data;
-
+    enum { bits=32 };
     // https://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
     size_t nmb = (((width + 31) / 32) * 4) * height;
 
     data.data = malloc(nmb);
     data.nmb = nmb;
 
+    for (int y = 0; y < height; y++)
+    {
+        int x;
+        for (x = 0; x < width - (width % bits); x += bits)
+        {
+            data.data[x/bits] = bool_arr_to_uint32(&arr[y*width + x], bits);
+        }
 
+        // Put the last bits, they need padding
+        data.data[x/bits] = bool_arr_to_uint32(&arr[y*width + x], width - x);
+    }
 
     return data;
 }
@@ -139,15 +149,16 @@ write_bmp_1bit(char *restrict filename, const bool *arr, int32_t width, int32_t 
     FILE *file = fopen(filename, "wb+");
     size_t nmb_header = 0;
     size_t nmb_dib = 0;
-    size_t nmb_data = 0;
     size_t result = 0;
     // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    dib_t dib = create_bmp_dib(&nmb_dib, nmb_data, width, height, 1);
-    header_t header = create_bmp_header(&nmb_header, nmb_dib, nmb_data);
+    data_t data = create_bmp_data_1bit(arr, width, height);
+    dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 1);
+    header_t header = create_bmp_header(&nmb_header, nmb_dib, data.nmb);
 
     result += fwrite(&header, 1, nmb_header, file);
     result += fwrite(&dib, 1, nmb_dib, file);
+    result += fwrite(data.data, 1, data.nmb*4, file);
 
     fclose(file);
 
