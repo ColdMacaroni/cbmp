@@ -150,9 +150,11 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
 
     data.data = malloc(nmb);
     data.nmb = nmb;
+    int data_idx = 0;
 
     int x, y;
-    rgb_t temp_rgb;
+    int offset = 0;
+    rgb_t c_rgb;  // Current
 
     // Maybe uint32_t[2] and have an uint64_t????
     union {
@@ -169,85 +171,21 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
      * data.data[0] = dword.full;
      */
 
-    int offset = 0;
-    int next_offset = 0;
-    int data_idx = 0;
-
     // Go the other way because that just how bitmaps are
     for (y = height - 1; y >= 0; y--)
     {
         for (x = 0; x < width; x++)
         {
-            temp_rgb = arr[y * width + x];
-
-            printf("%dx%d %02x %02x %02x\n",x ,y ,temp_rgb.r, temp_rgb.g, temp_rgb.b);
-
-            // Set specific bytes depending on how much of the dword is free
-            // Theyre set in BGR order.
-            switch (offset)
+            // Set the current for quick access
+            c_rgb = arr[y*width + x];
+            switch(offset)
             {
-                /* theres probably a way to do this with case cascading and all that */
-                // These cases overflow to the next dword.
-                case 3:
-                    dword.byte[offset + 0] = temp_rgb.b;
-                    next_dword.byte[3-offset] = temp_rgb.g;
-                    next_dword.byte[2-offset] = temp_rgb.r;
-                    next_offset = 2;
-                    break;
-                case 2:
-                    dword.byte[offset + 0] = temp_rgb.b;
-                    dword.byte[offset + 1] = temp_rgb.g;
-                    next_dword.byte[3-offset] = temp_rgb.r;
-                    next_offset = 1;
-                // Both these cases have enough space for an rgb
-                case 1:
-                case 0:
-                    dword.byte[offset + 0] = temp_rgb.b;
-                    dword.byte[offset + 1] = temp_rgb.g;
-                    dword.byte[offset + 2] = temp_rgb.r;
-                    break;
-
-                // this should never happen.
                 default:
                     assert(0);
             }
-            // New offset and wrap around
-            offset += 3;
-            offset %= 4;
 
-            printf("\n %d \n", offset);
-
-            // When the off is 0, its a new dword.
-            if (!offset)
-            {
-                data.data[data_idx++] = dword.full;
-                printf("-- %08x %08x\n", dword.full, next_dword.full);
-                dword.full = next_dword.full;
-                next_dword.full = 0;
-                if (x + 1 < width)
-                {
-                offset += next_offset;
-                next_offset = 0;
-                }
-            }
-        }
-        // Some might be left in the dword
-        if (offset)
-        {
-            data.data[data_idx++] = dword.full;
-            printf("-- %08x %08x\n", dword.full, next_dword.full);
-        }
-        if (offset == 2 || offset == 3)
-        {
-            data.data[data_idx++] = next_dword.full;
-            printf("-- %08x %08x\n", dword.full, next_dword.full);
-            dword.full = 0;
         }
 
-        // Reset stuff
-        offset = 0;
-        dword.full = 0;
-        next_dword.full = 0;
     }
 
     return data;
@@ -264,6 +202,12 @@ write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t 
     // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
     //rgb_t *rgb_arr = bool_to_rgb_arr(arr, width *height);
+
+    /* Testing
+     * Should look like
+     * c3 c2 c1 d3  d2 d1 00 00
+     * a3 a2 a1 b3  b2 b1 00 00
+     */
 
     rgb_t rgb_arr[] = {
         (rgb_t) { 0xa1, 0xa2, 0xa3 },
