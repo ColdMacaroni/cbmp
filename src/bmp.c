@@ -5,7 +5,12 @@
 #include <assert.h>
 
 // kdevelop shows warning unless theres a semicolon here... thanks https://blog.csdn.net/qq_38777624/article/details/107022865
-;// Pack 1 to make sure these are right next to each other
+// I *could* use pragma push and pop BUT that would need another ; for the push.
+// This will make it file wide but its a small price to pay
+#pragma clang diagnostic ignored "-Wextra-semi"
+
+// Pack 1 to make sure these are right next to each other
+;
 #pragma pack(push,1)
 typedef struct
 {
@@ -52,7 +57,7 @@ rgb_t
     const rgb_t white = { .r = 0xff, .g = 0xff, .b = 0xff};
     const rgb_t black = { .r = 0x00, .g = 0x00, .b = 0x00};
 
-    for (int i = 0; i < len; i++)
+    for (unsigned int i = 0; i < len; i++)
         if (arr[i])
             rgb_arr[i] = white;
         else
