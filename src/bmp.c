@@ -144,9 +144,9 @@ data_t
 create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
 {
     data_t data;
-    enum { bits=32 };
+    enum { bits=32, byte_len=3};
     // https://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
-    size_t nmb = (((24 * width + 31) / 32) * 4) * height;
+    size_t nmb = (((24 * width + bits - 1) / bits) * 4) * height;
 
     data.data = malloc(nmb);
     data.nmb = nmb;
@@ -157,7 +157,7 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
     // Maybe uint32_t[2] and have an uint64_t????
     union {
         uint32_t full;
-        uint8_t byte[4];
+        uint8_t byte[byte_len + 1];
     } dword, next_dword;
     dword.full = 0;
     next_dword.full = 0;
@@ -170,6 +170,7 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
      */
 
     int offset = 0;
+    int next_offset = 0;
     int data_idx = 0;
 
     // Go the other way because that just how bitmaps are
@@ -179,7 +180,7 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
         {
             temp_rgb = arr[y * width + x];
 
-            printf("%02x %02x %02x\n", temp_rgb.r, temp_rgb.g, temp_rgb.b);
+            printf("%dx%d %02x %02x %02x\n",x ,y ,temp_rgb.r, temp_rgb.g, temp_rgb.b);
 
             // Set specific bytes depending on how much of the dword is free
             // Theyre set in BGR order.
@@ -191,12 +192,13 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
                     dword.byte[offset + 0] = temp_rgb.b;
                     next_dword.byte[3-offset] = temp_rgb.g;
                     next_dword.byte[2-offset] = temp_rgb.r;
+                    next_offset = 2;
                     break;
                 case 2:
                     dword.byte[offset + 0] = temp_rgb.b;
                     dword.byte[offset + 1] = temp_rgb.g;
                     next_dword.byte[3-offset] = temp_rgb.r;
-
+                    next_offset = 1;
                 // Both these cases have enough space for an rgb
                 case 1:
                 case 0:
@@ -222,6 +224,11 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
                 printf("-- %08x %08x\n", dword.full, next_dword.full);
                 dword.full = next_dword.full;
                 next_dword.full = 0;
+                if (x + 1 < width)
+                {
+                offset += next_offset;
+                next_offset = 0;
+                }
             }
         }
         // Some might be left in the dword
@@ -229,8 +236,15 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
         {
             data.data[data_idx++] = dword.full;
             printf("-- %08x %08x\n", dword.full, next_dword.full);
+        }
+        if (offset == 2 || offset == 3)
+        {
+            data.data[data_idx++] = next_dword.full;
+            printf("-- %08x %08x\n", dword.full, next_dword.full);
             dword.full = 0;
         }
+
+        // Reset stuff
         offset = 0;
         dword.full = 0;
         next_dword.full = 0;
@@ -249,7 +263,14 @@ write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t 
     size_t result = 0;
     // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    rgb_t *rgb_arr = bool_to_rgb_arr(arr, width * height);
+    //rgb_t *rgb_arr = bool_to_rgb_arr(arr, width *height);
+
+    rgb_t rgb_arr[] = {
+        (rgb_t) { 0xa1, 0xa2, 0xa3 },
+        (rgb_t) { 0xb1, 0xb2, 0xb3 },
+        (rgb_t) { 0xc1, 0xc2, 0xc3 },
+        (rgb_t) { 0xd1, 0xd2, 0xd3 },
+    };
 
     data_t data = create_bmp_data(rgb_arr, width, height);
     dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 24);
