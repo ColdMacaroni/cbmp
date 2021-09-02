@@ -31,16 +31,26 @@ typedef struct
 } dib_t;
 #pragma pack(pop)
 
-uint8_t bool_arr_to_int8(const bool *restrict arr)
+typedef struct
 {
-    uint8_t out = 0;
+    uint32_t *data;
+    size_t nmb;
+} data_t;
+
+uint32_t
+bool_arr_to_uint32(const bool *restrict arr, unsigned int arr_len)
+{
+    uint32_t out = 0;
 
     // arr left to right are bits left to right.
-    for (int i = 0; i < 8; i++)
+    for (unsigned int i = 0; i < arr_len; i++)
     {
         out <<= 1;
         out |= arr[i];
     }
+
+    // Pad
+    out <<= 32 - arr_len;
 
     return out;
 }
@@ -104,6 +114,22 @@ create_bmp_dib(size_t *nmb, size_t nmb_data,
     *nmb += nmb_dib;
 
     return dib;
+}
+
+data_t
+create_bmp_data_1bit(const bool* arr, int32_t width, int32_t height)
+{
+    data_t data;
+
+    // https://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
+    size_t nmb = (((width + 31) / 32) * 4) * height;
+
+    data.data = malloc(nmb);
+    data.nmb = nmb;
+
+
+
+    return data;
 }
 
 size_t
