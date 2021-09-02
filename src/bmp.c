@@ -37,6 +37,30 @@ typedef struct
     size_t nmb;
 } data_t;
 
+typedef struct
+{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} rgb_t;
+
+rgb_t
+*bool_to_rgb_arr(const bool *arr, unsigned int len)
+{
+    rgb_t *rgb_arr = calloc(sizeof(rgb_t), len);
+
+    const rgb_t white = { .r = 0xff, .g = 0xff, .b = 0xff};
+    const rgb_t black = { .r = 0x00, .g = 0x00, .b = 0x00};
+
+    for (int i = 0; i < len; i++)
+        if (arr[i])
+            rgb_arr[i] = white;
+        else
+            rgb_arr[i] = black;
+
+    return rgb_arr;
+}
+
 uint32_t
 bool_arr_to_uint32(const bool *arr, unsigned int arr_len)
 {
@@ -117,33 +141,89 @@ create_bmp_dib(size_t *nmb, size_t nmb_data,
 }
 
 data_t
-create_bmp_data_1bit(const bool *arr, int32_t width, int32_t height)
+create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
 {
     data_t data;
     enum { bits=32 };
     // https://en.wikipedia.org/wiki/BMP_file_format#Pixel_storage
-    size_t nmb = (((width + 31) / 32) * 4) * height;
+    size_t nmb = (((24 * width + 31) / 32) * 4) * height;
 
     data.data = malloc(nmb);
     data.nmb = nmb;
 
-    for (int y = 0; y < height; y++)
-    {
-        int x;
-        for (x = 0; x < width - (width % bits); x += bits)
-        {
-            data.data[x/bits] = bool_arr_to_uint32(&arr[y*width + x], bits);
-        }
+    int x, y;
+    rgb_t temp_rgb;
 
-        // Put the last bits, they need padding
-        data.data[x/bits] = bool_arr_to_uint32(&arr[y*width + x], width - x);
+    union {
+        uint32_t full;
+        uint8_t byte[4];
+    } dword, next_dword;
+    dword.full = 0;
+    next_dword.full = 0;
+
+    /* dword.byte[0] = arr[0].b;
+     * dword.byte[1] = arr[0].g;
+     * dword.byte[2] = arr[0].r;
+     *
+     * data.data[0] = dword.full;
+     */
+
+    int offset = 0;
+    int data_idx = 0;
+
+    // Go the other way because that just how bitmaps are
+    for (y = height - 1; y >= 0; y--)
+    {
+        for (x = 0; x < width; x++)
+        {
+            temp_rgb = arr[y * width + x];
+
+            printf("%02x %02x %02x\n", temp_rgb.r, temp_rgb.g, temp_rgb.b);
+
+            // Set specific bytes depending on how much of the dword is free
+            // Theyre set in BGR order.
+            switch (offset)
+            {
+                case 0:
+                case 1:
+                    dword.byte[offset + 2] = temp_rgb.r;
+                case 2:
+                    dword.byte[offset + 1] = temp_rgb.g;
+                case 3:
+                    dword.byte[offset + 0] = temp_rgb.b;
+                    break;
+                // this should never happen.
+                default:
+                    assert(0);
+            }
+            // New offset and wrap around
+            offset += 3;
+            offset %= 4;
+
+            printf("\n %d \n", offset);
+
+            // When the off is 0, its a new dword.
+            if (!offset)
+            {
+                data.data[data_idx++] = dword.full;
+                printf("-- %08x\n", dword.full);
+                dword.full = 0;
+            }
+        }
+        // Some might be left in the dword
+        if (offset)
+        {
+            data.data[data_idx++] = dword.full;
+            printf("-- %08x\n", dword.full);
+            dword.full = 0;
+        }
     }
 
     return data;
 }
 
 size_t
-write_bmp_1bit(char *restrict filename, const bool *arr, int32_t width, int32_t height)
+write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t height)
 {
     // Code
     FILE *file = fopen(filename, "wb+");
@@ -152,13 +232,15 @@ write_bmp_1bit(char *restrict filename, const bool *arr, int32_t width, int32_t 
     size_t result = 0;
     // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    data_t data = create_bmp_data_1bit(arr, width, height);
-    dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 1);
+    rgb_t *rgb_arr = bool_to_rgb_arr(arr, width * height);
+
+    data_t data = create_bmp_data(rgb_arr, width, height);
+    dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 24);
     header_t header = create_bmp_header(&nmb_header, nmb_dib, data.nmb);
 
     result += fwrite(&header, 1, nmb_header, file);
     result += fwrite(&dib, 1, nmb_dib, file);
-    result += fwrite(data.data, 1, data.nmb*4, file);
+    result += fwrite(data.data, 1, data.nmb, file);
 
     fclose(file);
 

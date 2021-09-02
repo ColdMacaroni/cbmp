@@ -8,6 +8,6 @@ uint8_t
 bool_arr_to_int8(bool *arr);
 
 size_t
-write_bmp_1bit(char *filename, const bool *arr, const int width, const int height);
+write_bmp_bool(char *filename, const bool *arr, const int width, const int height);
 
 #endif
