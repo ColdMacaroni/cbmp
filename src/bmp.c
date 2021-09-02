@@ -154,6 +154,7 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
     int x, y;
     rgb_t temp_rgb;
 
+    // Maybe uint32_t[2] and have an uint64_t????
     union {
         uint32_t full;
         uint8_t byte[4];
@@ -184,14 +185,26 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
             // Theyre set in BGR order.
             switch (offset)
             {
-                case 0:
-                case 1:
-                    dword.byte[offset + 2] = temp_rgb.r;
-                case 2:
-                    dword.byte[offset + 1] = temp_rgb.g;
+                /* theres probably a way to do this with case cascading and all that */
+                // These cases overflow to the next dword.
                 case 3:
                     dword.byte[offset + 0] = temp_rgb.b;
+                    next_dword.byte[3-offset] = temp_rgb.g;
+                    next_dword.byte[2-offset] = temp_rgb.r;
                     break;
+                case 2:
+                    dword.byte[offset + 0] = temp_rgb.b;
+                    dword.byte[offset + 1] = temp_rgb.g;
+                    next_dword.byte[3-offset] = temp_rgb.r;
+
+                // Both these cases have enough space for an rgb
+                case 1:
+                case 0:
+                    dword.byte[offset + 0] = temp_rgb.b;
+                    dword.byte[offset + 1] = temp_rgb.g;
+                    dword.byte[offset + 2] = temp_rgb.r;
+                    break;
+
                 // this should never happen.
                 default:
                     assert(0);
@@ -206,17 +219,21 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
             if (!offset)
             {
                 data.data[data_idx++] = dword.full;
-                printf("-- %08x\n", dword.full);
-                dword.full = 0;
+                printf("-- %08x %08x\n", dword.full, next_dword.full);
+                dword.full = next_dword.full;
+                next_dword.full = 0;
             }
         }
         // Some might be left in the dword
         if (offset)
         {
             data.data[data_idx++] = dword.full;
-            printf("-- %08x\n", dword.full);
+            printf("-- %08x %08x\n", dword.full, next_dword.full);
             dword.full = 0;
         }
+        offset = 0;
+        dword.full = 0;
+        next_dword.full = 0;
     }
 
     return data;
