@@ -22,6 +22,7 @@ rgb_t
 
     return rgb_arr;
 }
+
 /* Function not used, kept for why not.
 uint32_t
 bool_arr_to_uint32(const bool *arr, unsigned int arr_len)

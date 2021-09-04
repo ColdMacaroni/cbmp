@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "bmp.h"
 
 // Test array
@@ -28,12 +29,18 @@ main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        fprintf(stderr, "Please provide destination filename as argument");
+        fprintf(stderr, "Please provide filename as argument");
         return EXIT_FAILURE;
     }
+    /*
     print_arr(g_arr, T_WIDTH, T_HEIGHT);
 
     printf("\n%lu bytes written\n", write_bmp_bool(argv[1], g_arr, T_WIDTH, T_HEIGHT));
+    */
+
+    int32_t width = 0, height = 0;
+
+    rgb_t *arr = read_bmp(argv[1], &width, &height);
 
     return EXIT_SUCCESS;
 }
@@ -48,3 +55,4 @@ print_arr(const bool *arr, const int width, const int height)
         putchar('\n');
     }
 }
+
