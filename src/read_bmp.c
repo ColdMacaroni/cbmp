@@ -34,12 +34,24 @@ rgb_t
     dib_t dib;
     fread(&dib, 1, dib_nmb, file);
 
+    // Do a bunch of checks to make sure this is real!
+    // Quick check that'll rule a bunch of stuff out'
     if (dib.dib_size != dib_nmb)
     {
         fprintf(stderr, "Unknown DIB header. Not supported. Size = %d\n", dib.dib_size);
 
         cleanup(file);
     }
+    if (dib.color_planes != 1)
+    {
+        fprintf(stderr, "Color planes is not 1, it's %d. No idea what to do.\n", dib.color_planes);
+
+        cleanup(file);
+    }
+
+
+    *width = dib.width;
+    *height = dib.height;
 
     return arr;
 }
