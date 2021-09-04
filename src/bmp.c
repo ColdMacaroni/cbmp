@@ -279,6 +279,7 @@ write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t 
     result += fwrite(&dib, 1, nmb_dib, file);
     result += fwrite(data.data, 1, data.nmb, file);
 
+    free(data.data);
     fclose(file);
 
     return result;

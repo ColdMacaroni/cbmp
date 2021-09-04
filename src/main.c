@@ -1,10 +1,10 @@
 /* Convert an array to a 1bit bmp */
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "bmp.h"
 
 // Test array
-#if 1
 #define T_WIDTH 10
 #define T_HEIGHT 10
 const bool g_arr[T_WIDTH * T_HEIGHT] = {
@@ -19,19 +19,23 @@ const bool g_arr[T_WIDTH * T_HEIGHT] = {
     0, 1, 1, 1, 1, 1, 1, 1, 1, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
-#endif
 
 void
 print_arr(const bool *arr, const int width, const int height);
 
 int
-main(/*int argc, char **argv*/)
+main(int argc, char **argv)
 {
-#ifdef T_WIDTH
+    if (argc != 2)
+    {
+        fprintf(stderr, "Please provide destination filename as argument");
+        return EXIT_FAILURE;
+    }
     print_arr(g_arr, T_WIDTH, T_HEIGHT);
 
-    printf("\n%lu bytes written\n", write_bmp_bool("test", g_arr, T_WIDTH, T_HEIGHT));
-#endif
+    printf("\n%lu bytes written\n", write_bmp_bool(argv[1], g_arr, T_WIDTH, T_HEIGHT));
+
+    return EXIT_SUCCESS;
 }
 
 void
