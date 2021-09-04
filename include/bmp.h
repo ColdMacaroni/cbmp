@@ -1,5 +1,5 @@
-#ifndef BMP_PROTECT
-#define BMP_PROTECT 1
+#ifndef __BMP__
+#define __BMP__ 1
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
