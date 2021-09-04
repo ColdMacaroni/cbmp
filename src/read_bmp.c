@@ -4,7 +4,7 @@
 
 #include "bmp_structs.h"
 
-#define cleanup(file) do {fclose(file);return NULL;} while(0)
+#define cleanup(file) do {if (arr != NULL) free(arr); if (file != NULL) fclose(file);return NULL;} while(0)
 rgb_t
 *read_bmp(const char *restrict filename, int32_t *width, int32_t *height)
 {
@@ -13,7 +13,11 @@ rgb_t
 
     FILE *file = fopen(filename, "rb");
     if (file == NULL)
+    {
+        fprintf(stderr, "There was an error opening %s\n", filename);
+
         return NULL;
+    }
 
     rgb_t *arr = NULL;
 
@@ -42,6 +46,8 @@ rgb_t
 
         cleanup(file);
     }
+
+    // Color planes, i actually have no idea
     if (dib.color_planes != 1)
     {
         fprintf(stderr, "Color planes is not 1, it's %d. No idea what to do.\n", dib.color_planes);
@@ -49,9 +55,32 @@ rgb_t
         cleanup(file);
     }
 
+    // Bits per pixel, just doing 24bits rn.
+    if (dib.bit_depth != 24)
+    {
+        fprintf(stderr, "Sorry! Right now only 24 bits per pixel are supported. "
+                        "Take your %d bits per pixel image somewhere else.\n", dib.bit_depth);
+
+        cleanup(file);
+    }
+
+    // Cant deal with compression
+    if (dib.compression)
+    {
+        fprintf(stderr, "Sorry! I have no idea how to deal with compression!\n");
+
+        cleanup(file);
+    }
 
     *width = dib.width;
     *height = dib.height;
+
+    if (fseek(file, header.pixarr_offset, SEEK_SET))
+    {
+        fprintf(stderr, "There was a problem with fseek\n");
+
+        cleanup(file);
+    }
 
     return arr;
 }
