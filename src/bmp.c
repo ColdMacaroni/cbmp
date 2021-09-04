@@ -211,24 +211,14 @@ create_bmp_data(const rgb_t *arr, int32_t width, int32_t height)
 }
 
 size_t
-write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t height)
+write_bmp(char *restrict filename, const rgb_t *arr, int32_t width, int32_t height)
 {
-    // Code
     FILE *file = fopen(filename, "wb+");
     size_t nmb_header = 0;
     size_t nmb_dib = 0;
     size_t result = 0;
-    // int8_t *bmp_content = create_bmp_1bit(&nmb, arr, width, height);
 
-    rgb_t *rgb_arr = bool_to_rgb_arr(arr, width *height);
-
-    /* Testing
-     * Should look like
-     * c3 c2 c1 d3  d2 d1 00 00
-     * a3 a2 a1 b3  b2 b1 00 00
-     */
-
-    data_t data = create_bmp_data(rgb_arr, width, height);
+    data_t data = create_bmp_data(arr, width, height);
     dib_t dib = create_bmp_dib(&nmb_dib, data.nmb, width, height, 24);
     header_t header = create_bmp_header(&nmb_header, nmb_dib, data.nmb);
 
@@ -239,5 +229,15 @@ write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t 
     free(data.data);
     fclose(file);
 
+    return result;
+}
+
+size_t
+write_bmp_bool(char *restrict filename, const bool *arr, int32_t width, int32_t height)
+{
+    rgb_t *rgb_arr = bool_to_rgb_arr(arr, abs(width) * abs(height));
+    size_t result = write_bmp(filename, rgb_arr, width, height);
+
+    free(rgb_arr);
     return result;
 }
